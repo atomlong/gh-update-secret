@@ -79,4 +79,5 @@ curl \
     --silent --show-error --fail \
     -H "Content-Type: application/json" \
     "$URL_SECRET" -d @secret.json
+rm -f secret.json
 echo "Successfully updated secret"
