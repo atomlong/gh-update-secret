@@ -31,8 +31,12 @@ set -e
 echo "Installing requirements"
 pip3 install pynacl
 
-URL_PUBLIC_KEY="https://api.github.com/repos/${GITHUB_REPO}/actions/secrets/public-key"
-URL_SECRET="https://api.github.com/repos/${GITHUB_REPO}/actions/secrets/${SECRET_NAME}"
+REPOS=${GITHUB_REPO}
+[ -f ${GITHUB_WORKSPACE}/.gitmodules ] && \
+REPOS+=($(git config --file ${GITHUB_WORKSPACE}/.gitmodules --get-regexp url | sed -rn "s#^submodule\.\S+\s+https?://github.com/(.*)(\.git|$)#\1#p"))
+for REPO in ${REPOS[@]}; do
+URL_PUBLIC_KEY="https://api.github.com/repos/${REPO}/actions/secrets/public-key"
+URL_SECRET="https://api.github.com/repos/${REPO}/actions/secrets/${SECRET_NAME}"
 
 # Get private key for secret encryption
 echo "Get PUBLIC_KEY from GitHub API"
@@ -65,7 +69,7 @@ else
     echo "Successfully encrypted value"
 fi
 
-echo "Updating secret..."
+echo "Updating secret for ${REPO}..."
 # create json
 cat <<EOJ > secret.json
 {
@@ -80,4 +84,5 @@ curl \
     -H "Content-Type: application/json" \
     "$URL_SECRET" -d @secret.json
 rm -f secret.json
-echo "Successfully updated secret"
+echo "Successfully updated secret for ${REPO}"
+done
