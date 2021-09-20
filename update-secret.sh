@@ -40,10 +40,10 @@ URL_SECRET="https://api.github.com/repos/${REPO}/actions/secrets/${SECRET_NAME}"
 
 # Get private key for secret encryption
 echo "Get PUBLIC_KEY from GitHub API"
-eval "$(curl --silent --show-error --fail \
+eval "$(while ! curl --silent --show-error --fail \
         -H "Authorization: token $PERSONAL_ACCESS_TOKEN" \
         -H "Accept: application/vnd.github.v3+json" \
-        "$URL_PUBLIC_KEY" | jq -r '@sh "PUBLIC_KEY=\(.key) PUBLIC_KEY_ID=\(.key_id)"')"
+        "$URL_PUBLIC_KEY" 2>/dev/null; do :; done | jq -r '@sh "PUBLIC_KEY=\(.key) PUBLIC_KEY_ID=\(.key_id)"')"
 
 if [ -z "$PUBLIC_KEY" ]
 then
@@ -78,11 +78,11 @@ cat <<EOJ > secret.json
 }
 EOJ
 # call GitHub API
-curl \
+while ! curl \
     -X PUT -H "Authorization: token $PERSONAL_ACCESS_TOKEN" \
     --silent --show-error --fail \
     -H "Content-Type: application/json" \
-    "$URL_SECRET" -d @secret.json
+    "$URL_SECRET" -d @secret.json 2>/dev/null; do :; done
 rm -f secret.json
 echo "Successfully updated secret for ${REPO}"
 done
